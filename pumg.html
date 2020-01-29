@@ -8,24 +8,110 @@
 
 
 
-
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.21.0/phaser.min.js"></script>
+
 <script>
+
+let websocket;
+
+websocket = new WebSocket("ws://192.168.122.42:2345");
+websocket.onmessage = function(obj) {
+	let data = JSON.parse(obj.data);
+
+	console.log(data.player);
+	player_num = data.player;
+};
+
+
+
+
+
+
+
+
+let player_num = 0;
+let canvas_w = 800;
+let canvas_h = 450;
+let padding = 128
+let player_w = 32;
+let player_h = 200;
+let player1_x = padding;
+let player1_y = canvas_h/2-player_h/2;
+let player2_x = canvas_w - padding - player_w;
+let player2_y = canvas_h/2-player_h/2;
+
+let graphics;
+
+
 var config = {
 	type: Phaser.AUTO,
-	width: 800,
-	height: 600,
+	width: canvas_w,
+	height: canvas_h,
 	backgroundColor: '#2d2d2d',
 	parent: 'phaser-example',
-/*	scene: {
-		preload: preload,
-		create: create
-	}*/
+	scene: {
+		create: create,
+		update: update
+	}
+};
+
+function paintScreen (config) {
+
+	graphics.clear();
+
+	let player1 = new Phaser.Geom.Rectangle(
+		player1_x,
+		player1_y,
+		player_w,
+		player_h);
+
+	graphics.fillRectShape(player1);
+
+
+	let player2 = new Phaser.Geom.Rectangle(
+		player2_x,
+		player2_y,
+		player_w,
+		player_h);
+
+	graphics.fillRectShape(player2);
 
 };
 
-var game = new Phaser.Game(config);
+
+function create()
+{
+	graphics = this.add.graphics({ fillStyle: { color: 0xffffff } });
+	
+	this.key_up = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP);
+	this.key_down = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DOWN);
+	
+	paintScreen(this);
+};
+
+function update () {
+
+	if (this.key_up.isDown) {console.log('UP');
+		//if (player_num == 1)
+			player1_y -= 4;	
+	}
+
+	if (this.key_down.isDown) {console.log('UP');
+		//if (player_num == 1)
+			player1_y += 4;	
+	}
+	
+
+	if(player_num == 1)
+		websocket.send('{"y":'+player1_y+'}');
+
+
+	paintScreen(this);
+};
+
+
+let game = new Phaser.Game(config);
+
 </script>
 
 </body>
