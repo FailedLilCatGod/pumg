@@ -20,9 +20,8 @@ websocket_server.on('request', function(req){
 			p1 = req.accept(null, req.origin);
 			
 			p1.on('message', function(e){
-				//if (p2 == null)
-					//	return;
-//				p2.send(e.utf8Data);	
+
+				p2.send(e.utf8Data);	
 				console.log(e.utf8Data);
 			});
 
@@ -40,7 +39,7 @@ websocket_server.on('request', function(req){
 					p1.send('{"start":1}');
 					p2.send('{"start":1}');
 					
-			}, 3000);
+			}, 500);
 	};
 });
 
