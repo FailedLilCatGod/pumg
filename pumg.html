@@ -51,14 +51,30 @@ websocket.onmessage = function(obj) {
 			bullet1_y = data.bullet_y;
 		}
 	}
+
+	if (data.victor != null)
+	{
+		if (data.victor == 1)
+		{
+			score1++;
+		}
+
+		if (data.victor == 2)
+		{
+			score2++;
+		}
+	}
 };
 
 
 
 
 
-
-
+//Variables modificables
+let score1 = 1;
+let score2 = 1;
+let scoreText1;
+let scoreText2;
 let player_num = 0;
 let canvas_w = 800;
 let canvas_h = 450;
@@ -69,10 +85,37 @@ let player1_x = padding;
 let player1_y = canvas_h/2-player_h/2;
 let player2_x = canvas_w - padding - player_w;
 let player2_y = canvas_h/2-player_h/2;
+let bullet_w = 10;
 let bullet1_x = -10;
 let bullet1_y = -10;
 let bullet2_x = -10;
 let bullet2_y = -10;
+let bullet_speed = 4;
+
+
+
+
+
+
+//Valores originales
+let originPlayer1_x = padding;
+let originPlayer1_y = canvas_h/2-player_h/2;
+let originPlayer2_x = canvas_w - padding - player_w;
+let originPlayer2_y = canvas_h/2-player_h/2;
+let originBullet1_x = -10;
+let originBullet1_y = -10;
+let originBullet2_x = -10;
+let originBullet2_y = -10;
+
+
+
+
+
+
+let game_over_status = false;
+
+
+
 
 let graphics;
 
@@ -83,11 +126,30 @@ var config = {
 	height: canvas_h,
 	backgroundColor: '#2d2d2d',
 	parent: 'phaser-example',
+	physics: {
+		default: 'arcade',
+		arcade: {
+			debug: true
+		}
+	},
 	scene: {
 		create: create,
 		update: update
 	}
 };
+
+function gameOver () {
+
+	player1_x = originPlayer1_x;
+	player1_y = originPlayer1_y;
+	player2_x = originPlayer2_x;
+	player2_y = originPlayer2_y;
+	bullet1_x = originBullet1_x;
+	bullet1_y = originBullet1_y;
+	bullet2_x = originBullet2_x;
+	bullet2_y = originBullet2_y;
+
+}
 
 function paintScreen (config) {
 
@@ -113,30 +175,58 @@ function paintScreen (config) {
 	let bullet1 = new Phaser.Geom.Rectangle(
 		bullet1_x,
 		bullet1_y,
-		10,
-		10);
+		bullet_w,
+		bullet_w);
 
 	graphics.fillRectShape(bullet1);
 
 	let bullet2 = new Phaser.Geom.Rectangle(
 		bullet2_x,
 		bullet2_y,
-		10,
-		10);
+		bullet_w,
+		bullet_w);
 
 	graphics.fillRectShape(bullet2);
 
+	scoreText1.setText(score1);
+	scoreText2.setText(score2);
+	if (player_num == 1)
+	{
+		if (bullet1_x >= player2_x && bullet1_x <= player2_x + player_w)
+		{
+			if(bullet1_y >= player2_y && bullet1_y <= player2_y + player_h)
+			{
+				websocket.send('{"victor":1}');
+				gameOver();
+			}
+		}
+	}
+	else if (player_num == 2)
+	{
+		if (bullet2_x >= player1_x && bullet2_x <= player1_x + player_w)
+		{
+			if(bullet2_y >= player1_y && bullet2_y <= player1_y + player_h)
+			{
+				websocket.send('{"victor":2}');
+				gameOver();
+			}
+		}
+	}
 };
 
 
 function create()
 {
 	graphics = this.add.graphics({ fillStyle: { color: 0xffffff } });
-	
+
+	scoreText1 = this.add.text(canvas_w/3, canvas_h/10, score1 , {fontSize: '64px', fill: '#f00'})
+	scoreText2 = this.add.text(canvas_w * 2 / 3, canvas_h/10, score2 , {fontSize: '64px', fill: '#f00'})
+
 	this.key_up = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP);
 	this.key_down = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DOWN);
 	this.key_space = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 	
+
 	paintScreen(this);
 };
 
@@ -145,12 +235,14 @@ function update () {
 	if(!start)
 		return;
 
+if (!game_over_status){
+
 	if(fire)
 	{
 		if (player_num == 1)
-			bullet1_x++
+			bullet1_x += bullet_speed;
 		if (player_num == 2)
-			bullet2_x--
+			bullet2_x -= bullet_speed;
 	}
 
 	if (this.key_up.isDown) 
@@ -188,11 +280,6 @@ function update () {
 		}	
 	}
 
-
-
-
-
-
 	
 	if(player_num == 1)
 	{
@@ -204,6 +291,8 @@ function update () {
 		websocket.send('{"y":'+player2_y+'}');
 		websocket.send('{"bullet_x":'+bullet2_x+',"bullet_y":'+bullet2_y+'}')
 	}
+
+}
 
 	paintScreen(this);
 };
